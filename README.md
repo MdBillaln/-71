@@ -3,161 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF Channel Store</title>
+    <title>Premium Download</title>
     <style>
-        body { background: #050505; color: #fff; font-family: sans-serif; margin: 0; padding: 10px; }
-        .two-column-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 600px; margin: auto; }
-        .card { background: #1a1a1a; padding: 10px; border-radius: 15px; border: 1px solid #333; text-align: center; }
-        .card img { width: 100%; height: 120px; border-radius: 10px; object-fit: cover; }
-        
-        /* মডাল ডিজাইন */
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; overflow-y: auto; padding: 10px; box-sizing: border-box; }
-        .modal-box { background: white; color: #333; padding: 20px; width: 100%; max-width: 500px; margin: 20px auto; border-radius: 20px; box-sizing: border-box; }
-        
-        .method-box { border: 2px solid #e0e0e0; padding: 15px; border-radius: 15px; margin: 10px 0; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
-        .method-box.selected { border-color: #007bff; background: #f0f7ff; }
-        .logo { width: 40px; height: 40px; object-fit: contain; }
-        .btn-main { width: 100%; padding: 15px; background: #001f3f; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .back-btn { width: 100%; padding: 12px; background: #f4f4f4; border: 1px solid #ddd; border-radius: 12px; cursor: pointer; margin-top: 10px; font-weight: bold; }
-        .copy-btn { cursor: pointer; color: #e2136e; font-weight: bold; background: #ffe6ef; padding: 2px 6px; border-radius: 4px; }
-        .input-field { width: 90%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin: 10px 0; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #e2136e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background: #060214; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        /* মোবাইল ফ্রেম ডিজাইন */
+        .mobile-frame { width: 360px; height: 640px; background: #0f0c20; border: 8px solid #333; border-radius: 40px; box-shadow: 0 0 20px rgba(0,242,254,0.3); padding: 20px; text-align: center; color: white; overflow-y: auto; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .btn { background: linear-gradient(135deg, #ff007f, #7f00ff); padding: 12px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: bold; border: none; color: white; }
+        .btn.done { background: #2d3748; }
+        .btn.locked { background: #1a202c; color: #4a5568; cursor: not-allowed; }
+        .btn.waiting { background: #d69e2e; cursor: wait; }
+        .main-btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: not-allowed; background: #2d3748; color: #a0aec0; }
+        .unlocked { background: linear-gradient(135deg, #00b4db, #00ff87); color: #000; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align: center; color: #00d4ff;">⚡ FF PANEL STORE ⚡</h1>
-    <div class="two-column-grid" id="twoColGrid"></div>
+<div class="mobile-frame">
+    <h3>✨ DOWNLOAD CENTER ✨</h3>
+    <div id="btnContainer" class="container"></div>
+    <button id="mainBtn" class="main-btn" onclick="handleDownload()">🔒 FILE LOCKED</button>
+</div>
 
-    <div id="modal">
-        <div class="modal-box">
-            <div id="step1">
-                <h2 id="modalTitle" style="text-align:center;"></h2>
-                <p>মেয়াদ নির্বাচন করুন:</p>
-                <div id="priceButtons"></div>
-                <button class="back-btn" onclick="document.getElementById('modal').style.display='none'">বন্ধ করুন</button>
-            </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-            <div id="step2" style="display:none;">
-                <h3>পেমেন্ট মেথড</h3>
-                <div class="method-box" id="bkashBox" onclick="selectMethod('bKash')">
-                    <img src="https://i.postimg.cc/gkyN47j5/8239.jpg" class="logo">
-                    <span><b>bKash</b> Personal</span>
-                </div>
-                <div class="method-box" id="nagadBox" onclick="selectMethod('Nagad')">
-                    <img src="https://i.postimg.cc/PJj1wtWv/8240.png" class="logo">
-                    <span><b>Nagad</b> Personal</span>
-                </div>
-                <button class="btn-main" onclick="goToStep3()">পরবর্তী</button>
-                <button class="back-btn" onclick="showStep('step1')">⬅ পেছনে যান</button>
-            </div>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDLzqlIqhDMIJm66rGUoxIxM-I9e6CRgsw",
+        authDomain: "swaponvai-f59f9.firebaseapp.com",
+        databaseURL: "https://swaponvai-f59f9-default-rtdb.firebaseio.com",
+        projectId: "swaponvai-f59f9",
+        storageBucket: "swaponvai-f59f9.firebasestorage.app",
+        messagingSenderId: "856962947175",
+        appId: "1:856962947175:web:a7cfdad03f931c57915cc2"
+    };
+    
+    const db = getDatabase(initializeApp(firebaseConfig));
+    const adLink = "https://omg10.com/4/10998968";
+    
+    let mediafireLink = "";
+    let completed = JSON.parse(localStorage.getItem('adStatus') || "[false, false, false, false, false, false]");
 
-            <div id="step3" style="display:none;">
-                <h3 id="headerTitle" style="text-align:center; padding:10px; border-radius:10px; color:white;">পেমেন্ট</h3>
-                <p>প্রদেয় অ্যামাউন্ট: <b id="finalPrice"></b> ৳ <span class="copy-btn" onclick="copyText(selected.price)">📋 কপি</span></p>
-                <input type="text" class="input-field" id="txid" placeholder="ট্রানজেকশন আইডি">
-                <div style="background:#fafafa; padding:10px; font-size:13px; border-radius:10px;">
-                    <p>এই নাম্বারে সেন্ড মানি করুন: <br><b>01966199195</b> <span class="copy-btn" onclick="copyText('01966199195')">📋 কপি</span></p>
-                </div>
-                <button class="btn-main" id="btnColor" onclick="verify()">পেমেন্ট ভেরিফাই করুন</button>
-                <button class="back-btn" onclick="showStep('step2')">⬅ পেছনে যান</button>
-            </div>
+    onValue(ref(db, 'current_download_link'), (snapshot) => { mediafireLink = snapshot.val(); });
 
-            <div id="loading" style="display:none; text-align:center;">
-                <div class="spinner"></div>
-                <p>ভেরিফাই করা হচ্ছে...</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const panels = [
-            {n: "DRIP CLIENT (NON-ROOT)", i: "https://i.postimg.cc/Ss6R0mcz/IMG-20260627-144004-726.jpg", p: {"৩ দিন": 200, "৭ দিন": 400, "১৫ দিন": 600, "৩০ দিন": 800}},
-            {n: "HG CHEST (NON-ROOT)", i: "https://i.postimg.cc/BnnKxPHx/IMG-20260624-181215-558.jpg", p: {"৭ দিন": 400, "১৫ দিন": 600, "৩০ দিন": 800}},
-            {n: "DRIP PROXY (NON-ROOT)", i: "https://i.postimg.cc/g212nxDq/IMG-20260702-120325-819.jpg", p: {"৭ দিন": 400, "১৫ দিন": 600, "৩০ দিন": 800}},
-            {n: "HG PROXY (NON-ROOT)", i: "https://i.postimg.cc/G28N9pX9/file-000000009eb472079905da0e92043bf9.png", p: {"৭ দিন": 400, "১৫ দিন": 600, "৩০ দিন": 800}},
-            {n: "HG CHEST ROOT", i: "https://i.postimg.cc/Bb3gsZyg/file-000000003da872078a3af72226a8b482.png", p: {"৭ দিন": 400, "১৫ দিন": 600, "৩০ দিন": 800}},
-            {n: "DRIP CLIENT ROOT", i: "https://i.postimg.cc/X70Kyvsh/IMG-20260702-115820-037.jpg", p: {"৭ দিন": 400, "১৫ দিন": 600, "৩০ দিন": 800}},
-            {n: "BR MODS ROOT", i: "https://i.postimg.cc/52Sstz1k/IMG-20260702-120040-369.jpg", p: {"৭ দিন": 350, "৩০ দিন": 1100}},
-            {n: "SCORPIO ROOT", i: "https://i.postimg.cc/d3g8WsF9/IMG-20260702-122744-223.jpg", p: {"৭ দিন": 370, "১৫ দিন": 580, "৩০ দিন": 890}},
-            {n: "HAXX PRO ROOT", i: "https://i.postimg.cc/W40fgyMy/IMG-20260702-122938-316.jpg", p: {"১০ দিন": 600}}
-        ];
-
-        let selected = {name: "", price: 0, duration: "", method: ""};
-
-        function render() {
-            const g = document.getElementById('twoColGrid');
-            panels.forEach(p => {
-                g.innerHTML += `
-                    <div class="card">
-                        <img src="${p.i}" alt="${p.n}">
-                        <p style="font-size: 12px; margin: 10px 0;">${p.n}</p>
-                        <button style="background:#ff00ff; border:none; padding:8px; color:white; border-radius:5px; width:100%; cursor:pointer;" onclick="openM('${p.n}', ${JSON.stringify(p.p).replace(/"/g, "'")})">অর্ডার</button>
-                    </div>`;
-            });
+    function renderButtons() {
+        const container = document.getElementById('btnContainer');
+        container.innerHTML = "";
+        let completedCount = completed.filter(x => x === true).length;
+        
+        for(let i=0; i<6; i++) {
+            let btn = document.createElement('button');
+            btn.className = completed[i] ? "btn done" : (i === completedCount ? "btn" : "btn locked");
+            btn.innerHTML = completed[i] ? "✅ DONE" : `⚡ PART ${i+1}`;
+            btn.onclick = () => triggerAd(i, btn);
+            container.appendChild(btn);
         }
+        
+        let mBtn = document.getElementById('mainBtn');
+        mBtn.className = completedCount >= 6 ? "main-btn unlocked" : "main-btn";
+        mBtn.innerText = completedCount >= 6 ? "🔥 DOWNLOAD NOW 🔥" : "🔒 FILE LOCKED";
+    }
 
-        function openM(name, prices) {
-            document.getElementById('modalTitle').innerText = name;
-            selected.name = name;
-            document.getElementById('priceButtons').innerHTML = "";
-            Object.keys(prices).forEach(d => {
-                document.getElementById('priceButtons').innerHTML += `<button style="background:#001f3f; color:white; border:none; padding:10px; width:100%; border-radius:5px; margin-top:5px;" onclick="nextStep('${d}', ${prices[d]})">${d} - ${prices[d]}৳</button>`;
-            });
-            showStep('step1');
-            document.getElementById('modal').style.display = 'block';
+    window.triggerAd = function(i, el) {
+        let completedCount = completed.filter(x => x === true).length;
+        if(i === completedCount) {
+            let s = 5;
+            el.className = "btn waiting";
+            let timer = setInterval(() => {
+                el.innerText = `অপেক্ষা করুন ${s}s`;
+                if(s-- <= 0) {
+                    clearInterval(timer);
+                    completed[i] = true;
+                    localStorage.setItem('adStatus', JSON.stringify(completed));
+                    // অ্যাড আসার সম্ভাবনা বাড়াতে এখানে রিডাইরেক্ট ব্যবহার করছি
+                    window.location.href = adLink; 
+                }
+            }, 1000);
         }
+    };
 
-        function showStep(s) {
-            document.getElementById('step1').style.display = (s === 'step1') ? 'block' : 'none';
-            document.getElementById('step2').style.display = (s === 'step2') ? 'block' : 'none';
-            document.getElementById('step3').style.display = (s === 'step3') ? 'block' : 'none';
-            document.getElementById('loading').style.display = 'none';
+    window.handleDownload = () => {
+        if(completed.filter(x => x === true).length >= 6) {
+            window.open(mediafireLink, '_blank');
         }
-
-        function nextStep(d, p) {
-            selected.duration = d; selected.price = p;
-            showStep('step2');
-        }
-
-        function selectMethod(m) {
-            selected.method = m;
-            document.getElementById('bkashBox').className = (m === 'bKash') ? 'method-box selected' : 'method-box';
-            document.getElementById('nagadBox').className = (m === 'Nagad') ? 'method-box selected' : 'method-box';
-        }
-
-        function goToStep3() {
-            if(!selected.method) return alert("মেথড সিলেক্ট করুন!");
-            showStep('step3');
-            document.getElementById('finalPrice').innerText = selected.price;
-            let color = (selected.method === 'bKash') ? '#e2136e' : '#f06d20';
-            document.getElementById('headerTitle').style.backgroundColor = color;
-            document.getElementById('headerTitle').innerText = (selected.method === 'bKash') ? 'bKash' : 'Nagad';
-            document.getElementById('btnColor').style.backgroundColor = color;
-        }
-
-        function copyText(t) {
-            navigator.clipboard.writeText(t);
-            alert("কপি হয়েছে: " + t);
-        }
-
-        function verify() {
-            let t = document.getElementById('txid').value;
-            if(t.length < 10) return alert("সঠিক ট্রানজেকশন আইডি দিন!");
-            document.getElementById('step3').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-            
-            let msg = `নতুন অর্ডার:\nপ্রোডাক্ট: ${selected.name}\nমেয়াদ: ${selected.duration}\nমূল্য: ${selected.price}৳\nপেমেন্ট মেথড: ${selected.method}\nট্রানজেকশন আইডি: ${t}`;
-            let url = "https://wa.me/qr/5RLTV22YAHHOJ1?text=" + encodeURIComponent(msg);
-            
-            setTimeout(() => {
-                window.location.href = url;
-            }, 2000);
-        }
-
-        render();
-    </script>
+    };
+    renderButtons();
+</script>
 </body>
 </html>
-
